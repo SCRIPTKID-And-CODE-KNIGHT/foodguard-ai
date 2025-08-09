@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +10,14 @@ import {
   Thermometer,
   Clock,
   Utensils,
-  Droplets
+  Droplets,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 const EducationSection = () => {
+  const [expandedTopic, setExpandedTopic] = useState<number | null>(null);
+
   const topics = [
     {
       icon: <Shield className="h-6 w-6" />,
@@ -20,7 +25,8 @@ const EducationSection = () => {
       description: "Learn fundamental principles of safe food handling and storage",
       level: "Beginner",
       readTime: "5 min",
-      color: "success"
+      color: "success",
+      fullContent: "Food safety is crucial for preventing foodborne illnesses. Key principles include: proper hand washing, maintaining clean cooking surfaces, separating raw and cooked foods, cooking to safe temperatures, and storing food at correct temperatures. Always wash hands before and after handling food, use separate cutting boards for raw meat and vegetables, and refrigerate perishable foods promptly."
     },
     {
       icon: <Thermometer className="h-6 w-6" />,
@@ -28,7 +34,8 @@ const EducationSection = () => {
       description: "Understanding critical temperatures for bacterial growth prevention",
       level: "Intermediate",
       readTime: "8 min",
-      color: "warning"
+      color: "warning",
+      fullContent: "The 'danger zone' for food is between 40°F and 140°F (4°C to 60°C), where bacteria multiply rapidly. Keep hot foods hot (above 140°F) and cold foods cold (below 40°F). Use a food thermometer to check internal temperatures: 165°F for poultry, 160°F for ground meat, 145°F for whole cuts of beef and pork. Never leave perishable food at room temperature for more than 2 hours (1 hour if temperature is above 90°F)."
     },
     {
       icon: <AlertTriangle className="h-6 w-6" />,
@@ -36,7 +43,8 @@ const EducationSection = () => {
       description: "Visual and sensory signs of bacterial contamination in food",
       level: "Advanced",
       readTime: "12 min",
-      color: "danger"
+      color: "danger",
+      fullContent: "Signs of bacterial contamination include unusual odors (sour, rotten, or off smells), slimy or sticky textures, color changes, mold growth, and bubbling or foaming. Trust your senses - if something looks, smells, or feels wrong, don't consume it. However, some dangerous bacteria like Salmonella and E. coli may not produce obvious signs, which is why proper handling and cooking are essential. When in doubt, throw it out."
     },
     {
       icon: <Heart className="h-6 w-6" />,
@@ -44,7 +52,8 @@ const EducationSection = () => {
       description: "How bacterial contamination affects human health and wellbeing",
       level: "Beginner",
       readTime: "6 min",
-      color: "success"
+      color: "success",
+      fullContent: "Foodborne illnesses can cause symptoms ranging from mild stomach upset to severe dehydration and hospitalization. Common symptoms include nausea, vomiting, diarrhea, abdominal cramps, and fever. Vulnerable populations like pregnant women, young children, elderly adults, and immunocompromised individuals are at higher risk for severe complications. Most foodborne illnesses resolve within a few days, but some can cause long-term health issues."
     },
     {
       icon: <Utensils className="h-6 w-6" />,
@@ -52,7 +61,8 @@ const EducationSection = () => {
       description: "Best practices for preparing and cooking food safely",
       level: "Intermediate",
       readTime: "10 min",
-      color: "warning"
+      color: "warning",
+      fullContent: "Safe food preparation starts with clean hands, utensils, and surfaces. Wash all fruits and vegetables under running water. Use separate cutting boards for raw meat and ready-to-eat foods. Marinate foods in the refrigerator, not at room temperature. Don't rinse raw chicken as this can spread bacteria. Cook foods to their safe minimum internal temperatures and use a food thermometer to verify doneness."
     },
     {
       icon: <Droplets className="h-6 w-6" />,
@@ -60,7 +70,8 @@ const EducationSection = () => {
       description: "Ensuring drinking water is free from harmful bacteria",
       level: "Beginner",
       readTime: "7 min",
-      color: "success"
+      color: "success",
+      fullContent: "Safe drinking water is essential for health. If you're unsure about water quality, boil it for at least one minute or use bottled water. Be cautious with ice, especially when traveling. Well water should be tested annually for bacteria. Signs of contaminated water include unusual taste, odor, or appearance. Water filters can help, but ensure they're certified to remove bacteria and are properly maintained."
     }
   ];
 
@@ -94,7 +105,7 @@ const EducationSection = () => {
             </h3>
             <div className="grid md:grid-cols-2 gap-4">
               {topics.map((topic, index) => (
-                <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card key={index} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="p-2 bg-primary/10 rounded-lg text-primary">
@@ -116,8 +127,32 @@ const EducationSection = () => {
                     <CardDescription className="mb-4">
                       {topic.description}
                     </CardDescription>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Read More
+                    
+                    {expandedTopic === index && (
+                      <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {topic.fullContent}
+                        </p>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => setExpandedTopic(expandedTopic === index ? null : index)}
+                    >
+                      {expandedTopic === index ? (
+                        <>
+                          <ChevronUp className="h-4 w-4 mr-2" />
+                          Show Less
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4 mr-2" />
+                          Read More
+                        </>
+                      )}
                     </Button>
                   </CardContent>
                 </Card>

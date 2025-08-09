@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import scannerImage from "@/assets/scanner-device.jpg";
 
-type ScanStatus = "idle" | "connecting" | "scanning" | "processing" | "complete";
+type ScanStatus = "idle" | "connect-prompt" | "connecting" | "waiting-scan" | "scanning" | "sending-data" | "processing" | "complete";
 type ResultType = "safe" | "warning" | "danger";
 
 interface ScanResult {
@@ -30,21 +30,33 @@ const ScannerInterface = () => {
   const [result, setResult] = useState<ScanResult | null>(null);
 
   const startScan = async () => {
-    setScanStatus("connecting");
+    setScanStatus("connect-prompt");
     setProgress(0);
     setResult(null);
+  };
 
-    // Simulate connection
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setProgress(25);
+  const connectScanner = async () => {
+    setScanStatus("connecting");
+    
+    // Simulate device connection
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setProgress(15);
+    
+    setScanStatus("waiting-scan");
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    setProgress(40);
     
     setScanStatus("scanning");
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setProgress(60);
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    setProgress(65);
+    
+    setScanStatus("sending-data");
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setProgress(85);
     
     setScanStatus("processing");
-    await new Promise(resolve => setTimeout(resolve, 2500));
-    setProgress(90);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setProgress(95);
     
     // Simulate random result
     const results: ScanResult[] = [
@@ -82,10 +94,16 @@ const ScannerInterface = () => {
 
   const getStatusIcon = () => {
     switch (scanStatus) {
+      case "connect-prompt":
+        return <Wifi className="h-5 w-5" />;
       case "connecting":
         return <Wifi className="h-5 w-5 animate-pulse" />;
+      case "waiting-scan":
+        return <Scan className="h-5 w-5 animate-pulse" />;
       case "scanning":
         return <Scan className="h-5 w-5 animate-scan-pulse" />;
+      case "sending-data":
+        return <Activity className="h-5 w-5 animate-pulse" />;
       case "processing":
         return <Loader2 className="h-5 w-5 animate-spin" />;
       case "complete":
@@ -139,9 +157,12 @@ const ScannerInterface = () => {
               </CardTitle>
               <CardDescription>
                 {scanStatus === "idle" && "Ready to scan"}
-                {scanStatus === "connecting" && "Connecting to device..."}
-                {scanStatus === "scanning" && "Scanning sample..."}
-                {scanStatus === "processing" && "Processing results..."}
+                {scanStatus === "connect-prompt" && "Connect your external scanner"}
+                {scanStatus === "connecting" && "Connecting to scanner device..."}
+                {scanStatus === "waiting-scan" && "Waiting for scanner to finish..."}
+                {scanStatus === "scanning" && "Scanner is analyzing sample..."}
+                {scanStatus === "sending-data" && "Sending data to backend..."}
+                {scanStatus === "processing" && "AI processing results..."}
                 {scanStatus === "complete" && "Scan complete"}
               </CardDescription>
             </CardHeader>
@@ -184,6 +205,25 @@ const ScannerInterface = () => {
                     <Scan className="h-5 w-5 mr-2" />
                     Start Scan
                   </Button>
+                )}
+                
+                {scanStatus === "connect-prompt" && (
+                  <div className="flex-1 space-y-3">
+                    <div className="bg-muted p-4 rounded-lg text-center">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Please connect your external scanner device and ensure it's ready.
+                      </p>
+                      <Button 
+                        variant="medical" 
+                        size="lg" 
+                        onClick={connectScanner}
+                        className="w-full"
+                      >
+                        <Wifi className="h-5 w-5 mr-2" />
+                        Connect Scanner
+                      </Button>
+                    </div>
+                  </div>
                 )}
                 
                 {scanStatus === "complete" && (
