@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -10,7 +10,9 @@ import {
   CheckCircle, 
   AlertCircle, 
   XCircle,
-  Loader2 
+  Loader2,
+  Camera,
+  CameraOff
 } from "lucide-react";
 import scannerImage from "@/assets/scanner-device.jpg";
 
@@ -28,6 +30,9 @@ const ScannerInterface = () => {
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ScanResult | null>(null);
+  const [useCamera, setUseCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const startScan = async () => {
     setScanStatus("connect-prompt");
@@ -90,7 +95,84 @@ const ScannerInterface = () => {
     setScanStatus("idle");
     setProgress(0);
     setResult(null);
+    setUseCamera(false);
+    stopCamera();
   };
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setUseCamera(true);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setUseCamera(false);
+  };
+
+  const useCameraForScan = async () => {
+    await startCamera();
+    setScanStatus("scanning");
+    setProgress(30);
+    
+    // Simulate camera scanning
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    setProgress(65);
+    
+    setScanStatus("sending-data");
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setProgress(85);
+    
+    setScanStatus("processing");
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setProgress(95);
+    
+    // Simulate random result
+    const results: ScanResult[] = [
+      {
+        status: "safe",
+        confidence: 96,
+        details: "No harmful bacteria detected. Sample appears safe for consumption.",
+        recommendations: ["Store in refrigerated conditions", "Consume within recommended timeframe"]
+      },
+      {
+        status: "warning",
+        confidence: 78,
+        details: "Moderate bacterial presence detected. Exercise caution.",
+        recommendations: ["Cook thoroughly before consumption", "Do not consume raw", "Check expiration date"]
+      },
+      {
+        status: "danger",
+        confidence: 92,
+        details: "High levels of harmful bacteria detected. Do not consume.",
+        recommendations: ["Dispose of item immediately", "Clean preparation surfaces", "Wash hands thoroughly"]
+      }
+    ];
+    
+    const randomResult = results[Math.floor(Math.random() * results.length)];
+    setResult(randomResult);
+    setProgress(100);
+    setScanStatus("complete");
+    stopCamera();
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const getStatusIcon = () => {
     switch (scanStatus) {
@@ -168,16 +250,34 @@ const ScannerInterface = () => {
             </CardHeader>
             <CardContent>
               <div className="relative mb-6">
-                <img 
-                  src={scannerImage} 
-                  alt="Bacteria Detection Scanner" 
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-                {scanStatus !== "idle" && (
+                {useCamera && cameraStream ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                ) : (
+                  <img 
+                    src={scannerImage} 
+                    alt="Bacteria Detection Scanner" 
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+                )}
+                {scanStatus !== "idle" && !useCamera && (
                   <div className="absolute inset-0 bg-primary/10 rounded-lg flex items-center justify-center">
                     <div className="animate-medical-glow">
                       {getStatusIcon()}
                     </div>
+                  </div>
+                )}
+                {useCamera && (
+                  <div className="absolute top-2 left-2">
+                    <Badge variant="secondary" className="bg-red-500 text-white">
+                      <div className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></div>
+                      LIVE
+                    </Badge>
                   </div>
                 )}
               </div>
@@ -211,17 +311,29 @@ const ScannerInterface = () => {
                   <div className="flex-1 space-y-3">
                     <div className="bg-muted p-4 rounded-lg text-center">
                       <p className="text-sm text-muted-foreground mb-3">
-                        Please connect your external scanner device and ensure it's ready.
+                        Choose your scanning method:
                       </p>
-                      <Button 
-                        variant="medical" 
-                        size="lg" 
-                        onClick={connectScanner}
-                        className="w-full"
-                      >
-                        <Wifi className="h-5 w-5 mr-2" />
-                        Connect Scanner
-                      </Button>
+                      <div className="space-y-2">
+                        <Button 
+                          variant="medical" 
+                          size="lg" 
+                          onClick={connectScanner}
+                          className="w-full"
+                        >
+                          <Wifi className="h-5 w-5 mr-2" />
+                          Connect External Scanner
+                        </Button>
+                        <div className="text-xs text-muted-foreground">or</div>
+                        <Button 
+                          variant="outline" 
+                          size="lg" 
+                          onClick={useCameraForScan}
+                          className="w-full"
+                        >
+                          <Camera className="h-5 w-5 mr-2" />
+                          Use Camera Scan
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
