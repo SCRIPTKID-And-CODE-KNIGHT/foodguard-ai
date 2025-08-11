@@ -102,15 +102,39 @@ const ScannerInterface = () => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
       });
       setCameraStream(stream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setUseCamera(true);
+      
+      // Wait for video element to be available
+      setTimeout(() => {
+        if (videoRef.current && stream) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(e => console.error('Error playing video:', e));
+        }
+      }, 100);
     } catch (error) {
       console.error('Error accessing camera:', error);
+      // Fallback to basic video constraints
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setCameraStream(stream);
+        setUseCamera(true);
+        setTimeout(() => {
+          if (videoRef.current && stream) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(e => console.error('Error playing video:', e));
+          }
+        }, 100);
+      } catch (fallbackError) {
+        console.error('Camera access denied:', fallbackError);
+        alert('Camera access is required for scanning. Please allow camera permissions and try again.');
+      }
     }
   };
 
